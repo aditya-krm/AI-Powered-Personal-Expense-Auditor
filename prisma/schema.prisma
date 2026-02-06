@@ -1,0 +1,62 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  LENT
+  BORROWED
+  REPAYMENT
+}
+
+enum Category {
+  FOOD_DINING
+  TRANSPORT
+  SHOPPING
+  BILLS_UTILITIES
+  HOUSING
+  HEALTH_WELLNESS
+  ENTERTAINMENT
+  EDUCATION
+  GIFTING_DONATION
+  BUSINESS_OPERATIONS
+  INVESTMENT
+  SALARY
+  FREELANCE
+  BUSINESS_PROFIT
+  RETURNS
+  REFUNDS
+  GIFT_BONUS
+  GENERAL
+}
+
+model Transaction {
+  id                Int             @id @default(autoincrement())
+  type              TransactionType
+  amount            Decimal         @db.Decimal(10, 2)
+  currency          String          @default("INR") @db.VarChar(3)
+  category          Category        @default(GENERAL)
+  description       String?         @db.Text
+  relatedEntity     String?         @map("related_entity") @db.VarChar(100)
+  
+  // Logic for Partial Payments/History
+  parentId          Int?            @map("parent_id")
+  parent            Transaction?    @relation("TransactionHistory", fields: [parentId], references: [id])
+  children          Transaction[]   @relation("TransactionHistory")
+  
+  isSettled         Boolean         @default(false) @map("is_settled")
+  telegramMessageId String?         @unique @map("telegram_message_id")
+  paymentMethod     String?         @map("payment_method") @db.VarChar(50)
+  transactionDate   DateTime        @default(now()) @map("transaction_date")
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@map("transactions")
+  @@index([type, transactionDate])
+  @@index([category])
+}

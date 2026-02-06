@@ -1,0 +1,63 @@
+import { Context } from "telegraf";
+import { TransactionAIService } from "../services/ai.service";
+import { TransactionService } from "../services/transaction.service";
+import { logger } from "../utils/logger";
+import { config } from "../config/env";
+
+export class BotController {
+  constructor(
+    private aiService: TransactionAIService,
+    private transactionService: TransactionService
+  ) { }
+
+  public handleMessage = async (ctx: Context) => {
+    // 1. Auth Check
+    if (!ctx.from || ctx.from.id !== config.MY_TELEGRAM_ID) {
+      logger.warn(`Unauthorized access attempt from ID: ${ctx.from?.id}`);
+      return await ctx.reply("Unauthorized"); // Silent ignore or reply "Unauthorized"
+    }
+
+    // 2. Text handling
+    // Check if message exists and has text property (narrowing)
+    if (!ctx.message || !("text" in ctx.message)) return await ctx.reply("Invalid message");
+
+    const text = ctx.message.text;
+
+    // 3. Process
+    try {
+      await ctx.reply("⏳ Analyzing transaction...");
+
+      // Call AI Service
+      const parsedData = await this.aiService.parseTransaction(text);
+
+      // Save to DB
+      const savedTx = await this.transactionService.createTransaction(
+        parsedData,
+        ctx.message.message_id.toString()
+      );
+
+      // 4. Formatted Reply
+      const message =
+        `✅ *Transaction Saved*
+-------------------
+💰 *Amount:* ${savedTx.currency} ${savedTx.amount}
+📂 *Category:* ${savedTx.category}
+📝 *Desc:* ${savedTx.description}
+🏷 *Type:* ${savedTx.type}
+${savedTx.relatedEntity ? `👤 *Entity:* ${savedTx.relatedEntity}` : ""}
+-------------------
+_ID: ${savedTx.id}_`;
+
+      await ctx.replyWithMarkdown(message);
+
+    } catch (error: any) {
+      logger.error("Error processing message", error);
+      await ctx.reply(`❌ Error: ${error.message}`);
+    }
+  };
+
+  public handleStart = async (ctx: Context) => {
+    if (!ctx.from || ctx.from.id !== config.MY_TELEGRAM_ID) return;
+    await ctx.reply("👋 Ready to track your finances! Send me a message like 'Spent 500 on lunch'.");
+  };
+}
