@@ -52,6 +52,7 @@ model Transaction {
   
   isSettled         Boolean         @default(false) @map("is_settled")
   telegramMessageId String?         @unique @map("telegram_message_id")
+  rawText           String?         @map("raw_text") // Original message
   paymentMethod     String?         @map("payment_method") @db.VarChar(50)
   transactionDate   DateTime        @default(now()) @map("transaction_date")
   createdAt         DateTime        @default(now()) @map("created_at")

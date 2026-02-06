@@ -33,29 +33,18 @@ export class BotController {
       // Save to DB
       const savedTx = await this.transactionService.createTransaction(
         parsedData,
-        ctx.message.message_id.toString()
+        ctx.message.message_id.toString(),
+        text
       );
-
-      // 4. Formatted Reply
-      const message =
-        `✅ *Transaction Saved*
--------------------
-💰 *Amount:* ${savedTx.currency} ${savedTx.amount}
-📂 *Category:* ${savedTx.category}
-📝 *Desc:* ${savedTx.description}
-🏷 *Type:* ${savedTx.type}
-${savedTx.relatedEntity ? `👤 *Entity:* ${savedTx.relatedEntity}` : ""}
--------------------
-_ID: ${savedTx.id}_`;
-
-      await ctx.replyWithMarkdown(message);
+      // 4. Formatted Reply (using LLM's friendly message + ID)
+      // We use plain reply to avoid Markdown parsing errors (error 400)
+      await ctx.reply(`${parsedData.userReply}\n\n(ID: ${savedTx.id})`);
 
     } catch (error: any) {
       logger.error("Error processing message", error);
       await ctx.reply(`❌ Error: ${error.message}`);
     }
   };
-
   public handleStart = async (ctx: Context) => {
     if (!ctx.from || ctx.from.id !== config.MY_TELEGRAM_ID) return;
     await ctx.reply("👋 Ready to track your finances! Send me a message like 'Spent 500 on lunch'.");

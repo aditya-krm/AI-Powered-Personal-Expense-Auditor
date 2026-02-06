@@ -17,6 +17,7 @@ export interface ParsedTransaction {
   description: string;
   relatedEntity?: string;
   paymentMethod?: string;
+  userReply: string;
 }
 
 // --- Zod Schema for Validation ---
@@ -28,6 +29,7 @@ const TransactionSchema = z.object({
   description: z.string(),
   relatedEntity: z.string().optional().nullable(),
   paymentMethod: z.string().optional().nullable(),
+  userReply: z.string(),
 });
 
 // --- OpenAI Implementation ---
@@ -67,7 +69,7 @@ export class OpenAIProvider implements LLMProvider {
 // --- Main Service ---
 
 export class TransactionAIService {
-  constructor(private llmProvider: LLMProvider) {}
+  constructor(private llmProvider: LLMProvider) { }
 
   async parseTransaction(rawText: string): Promise<ParsedTransaction> {
     const categories = Object.values(Category).join(", ");
@@ -86,10 +88,11 @@ export class TransactionAIService {
     5. 'description' should be a brief summary.
     6. 'relatedEntity' is who paid/received (e.g., 'Uber', 'John').
     7. 'paymentMethod' (e.g., 'UPI', 'Cash', 'Credit Card').
+    8. 'userReply': Generate a short, friendly, and witty confirmation message for the user strictly summarizing what was saved (e.g., "Got it! 🍔 Spent 500 INR on Food."). 
     
     Output STRICTLY JSON. No markdown code blocks.
     Example:
-    {"type": "EXPENSE", "amount": 500, "currency": "INR", "category": "FOOD_DINING", "description": "Lunch at McD", "relatedEntity": "McDonalds", "paymentMethod": "UPI"}
+    {"type": "EXPENSE", "amount": 500, "currency": "INR", "category": "FOOD_DINING", "description": "Lunch at McD", "relatedEntity": "McDonalds", "paymentMethod": "UPI", "userReply": "Yum! 🍔 Recorded 500 INR for lunch."}
     `;
 
     const rawResponse = await this.llmProvider.generateCompletion(prompt);

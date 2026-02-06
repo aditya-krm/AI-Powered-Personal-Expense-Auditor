@@ -6,6 +6,7 @@ export class TransactionService {
   async createTransaction(
     data: ParsedTransaction,
     telegramMessageId: string,
+    rawText: string,
     userId?: number // Placeholder if we extend to multi-user
   ) {
     try {
@@ -20,6 +21,7 @@ export class TransactionService {
           relatedEntity: data.relatedEntity,
           paymentMethod: data.paymentMethod,
           telegramMessageId: telegramMessageId,
+          rawText: rawText,
           isSettled: data.type === "EXPENSE" || data.type === "INCOME", // Default logic
         },
       });
