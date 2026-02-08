@@ -1,13 +1,13 @@
-import { prisma } from "../prisma/client";
+import { prisma } from "@repo/database";
 import type { ParsedTransaction } from "./ai.service";
-import { Prisma, TransactionType } from "@prisma/client";
+import { Prisma, TransactionType } from "@repo/database";
 
 export class TransactionService {
   async createTransaction(
     data: ParsedTransaction,
     telegramMessageId: string,
     rawText: string,
-    userId?: number
+    userId?: number,
   ) {
     // 1. Prepare base data
     const amount = new Prisma.Decimal(data.amount);
@@ -18,17 +18,16 @@ export class TransactionService {
     // 2. SMART SETTLEMENT LOGIC
     // Only trigger if it's a REPAYMENT and we know who it is
     if (data.type === TransactionType.REPAYMENT && data.relatedEntity) {
-
       // Determine what we are looking for:
       // If I received money (REPAYMENT + INCOME context), I am looking for money I LENT.
       // If I paid money (REPAYMENT + EXPENSE context), I am looking for money I BORROWED.
       // *Wait* - The AI usually just tags "REPAYMENT". We need to infer direction.
-      // Assumption: 
+      // Assumption:
       // "Returned to Ravi" -> I paid -> finding BORROWED.
       // "Ravi returned" -> I received -> finding LENT.
 
       // Simple Heuristic based on typical AI output or description:
-      // For now, we search for BOTH LENT and BORROWED and see which one fits best, 
+      // For now, we search for BOTH LENT and BORROWED and see which one fits best,
       // or we rely on the user to be specific.
       // Better approach: Let's look for the *oldest unsettled transaction* involving this entity.
 
@@ -36,9 +35,9 @@ export class TransactionService {
         where: {
           relatedEntity: { equals: data.relatedEntity, mode: "insensitive" },
           isSettled: false,
-          type: { in: [TransactionType.LENT, TransactionType.BORROWED] }
+          type: { in: [TransactionType.LENT, TransactionType.BORROWED] },
         },
-        orderBy: { transactionDate: "asc" } // FIFO
+        orderBy: { transactionDate: "asc" }, // FIFO
       });
 
       if (openTx) {
@@ -47,17 +46,19 @@ export class TransactionService {
         // Calculate total repayments so far for this parent
         const previousRepayments = await prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { parentId: openTx.id }
+          where: { parentId: openTx.id },
         });
 
-        const totalRepaid = (previousRepayments._sum.amount || new Prisma.Decimal(0)).add(amount);
+        const totalRepaid = (
+          previousRepayments._sum.amount || new Prisma.Decimal(0)
+        ).add(amount);
 
         // Check if fully settled (allow for small float differences)
         if (totalRepaid.greaterThanOrEqualTo(openTx.amount)) {
           // Mark Parent as Settled
           await prisma.transaction.update({
             where: { id: openTx.id },
-            data: { isSettled: true }
+            data: { isSettled: true },
           });
           remainingBalance = new Prisma.Decimal(0);
         } else {
@@ -86,10 +87,14 @@ export class TransactionService {
     return { ...newTx, remainingBalance };
   }
 
-  async updateTransaction(id: number, data: ParsedTransaction, rawText: string) {
+  async updateTransaction(
+    id: number,
+    data: ParsedTransaction,
+    rawText: string,
+  ) {
     const amount = new Prisma.Decimal(data.amount);
 
-    // We simple update the fields. Smart settlement logic is complex to re-run on edit 
+    // We simple update the fields. Smart settlement logic is complex to re-run on edit
     // without reverting previous state. For Phase 1, we just update the basic fields.
     // If settlement logic is critical, we might need a more complex rollback system.
     // For now, assume the user is correcting the details of THIS specific transaction.
@@ -106,7 +111,7 @@ export class TransactionService {
         paymentMethod: data.paymentMethod,
         rawText: rawText, // Update raw text to reflect the correction
         isSettled: data.type === "EXPENSE" || data.type === "INCOME",
-      }
+      },
     });
 
     return updated;
@@ -118,8 +123,11 @@ export class TransactionService {
       orderBy: { createdAt: "desc" },
     });
 
-    return transactions.map(t =>
-      `• ${t.type} ${t.currency} ${t.amount} (${t.category}): ${t.description}`
-    ).join("\n");
+    return transactions
+      .map(
+        (t) =>
+          `• ${t.type} ${t.currency} ${t.amount} (${t.category}): ${t.description}`,
+      )
+      .join("\n");
   }
 }

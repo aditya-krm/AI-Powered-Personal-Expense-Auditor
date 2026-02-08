@@ -1,5 +1,5 @@
 import { Markup } from "telegraf";
-import { Category } from "@prisma/client";
+import { Category } from "@repo/database";
 
 /**
  * Main action keyboard for a transaction

@@ -4,7 +4,7 @@ import { TransactionService } from "../services/transaction.service";
 import { logger } from "../utils/logger";
 import { config } from "../config/env";
 import { getTransactionActions, getCategoryGrid } from "../utils/keyboards";
-import { prisma } from "../prisma/client"; // Need prisma to updating
+import { prisma } from "@repo/database";
 
 export class BotController {
   constructor(

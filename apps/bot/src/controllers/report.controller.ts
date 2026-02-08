@@ -1,12 +1,10 @@
 import { Context } from "telegraf";
-import { prisma } from "../prisma/client";
-import { TransactionType } from "@prisma/client";
+import { prisma, TransactionType } from "@repo/database";
 import { startOfDay, endOfDay } from "../utils/date";
 import { logger } from "../utils/logger";
 import { config } from "../config/env";
 
 export class ReportController {
-
   public handleDailySummary = async (ctx: Context) => {
     if (!ctx.from || ctx.from.id !== config.MY_TELEGRAM_ID) return;
 
@@ -22,7 +20,9 @@ export class ReportController {
       });
 
       if (txs.length === 0) {
-        return await ctx.reply("📅 **Today's Activity:** No transactions recorded.");
+        return await ctx.reply(
+          "📅 **Today's Activity:** No transactions recorded.",
+        );
       }
 
       let income = 0;
@@ -65,13 +65,15 @@ export class ReportController {
       if (Object.keys(expenseCats).length > 0) {
         reply += `\n**Expense Breakdown:**\n`;
         for (const [cat, amt] of Object.entries(expenseCats)) {
-          const catName = cat.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+          const catName = cat
+            .replace(/_/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
           reply += `• ${catName}: ₹${amt.toFixed(2)}\n`;
         }
       }
 
       await ctx.reply(reply);
-
     } catch (error) {
       logger.error("Error generating daily summary", error);
       await ctx.reply("❌ Failed to generate summary.");
@@ -87,19 +89,24 @@ export class ReportController {
         where: { relatedEntity: { not: null } },
       });
 
-      const balances: Record<string, { lent: number; borrowed: number; repaid: number }> = {};
+      const balances: Record<
+        string,
+        { lent: number; borrowed: number; repaid: number }
+      > = {};
 
       for (const t of txs) {
         let name = t.relatedEntity!;
         // Normalize name to Title Case to group "bob", "Bob", "BOB" together
-        name = name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        name = name.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
         balances[name] ??= { lent: 0, borrowed: 0, repaid: 0 };
 
         const amt = Number(t.amount);
         if (t.type === TransactionType.LENT) balances[name]!.lent += amt;
-        else if (t.type === TransactionType.BORROWED) balances[name]!.borrowed += amt;
-        else if (t.type === TransactionType.REPAYMENT) balances[name]!.repaid += amt;
+        else if (t.type === TransactionType.BORROWED)
+          balances[name]!.borrowed += amt;
+        else if (t.type === TransactionType.REPAYMENT)
+          balances[name]!.repaid += amt;
       }
 
       let oweMeText = "";
@@ -137,7 +144,6 @@ export class ReportController {
       if (iOweText) finalReply += `🏠 **You Owe:**\n${iOweText}`;
 
       await ctx.reply(finalReply);
-
     } catch (error) {
       logger.error("Error generating loan report", error);
       await ctx.reply("❌ Failed to generate loan report.");

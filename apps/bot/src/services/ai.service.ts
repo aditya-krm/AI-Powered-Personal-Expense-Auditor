@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { logger } from "../utils/logger";
 import { z } from "zod";
-import { TransactionType, Category } from "@prisma/client/wasm";
+import { TransactionType, Category } from "@repo/database";
 
 // --- Interfaces ---
 
@@ -69,7 +69,7 @@ export class OpenAIProvider implements LLMProvider {
 // --- Main Service ---
 
 export class TransactionAIService {
-  constructor(private llmProvider: LLMProvider) { }
+  constructor(private llmProvider: LLMProvider) {}
 
   async parseTransaction(rawText: string): Promise<ParsedTransaction> {
     const categories = Object.values(Category).join(", ");
