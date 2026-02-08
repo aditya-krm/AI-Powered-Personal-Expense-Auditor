@@ -4,7 +4,11 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start": "bun run src/index.ts",
+    "start": "pm2 start ecosystem.config.cjs",
+    "stop": "pm2 stop ecosystem.config.cjs",
+    "restart": "pm2 restart ecosystem.config.cjs",
+    "delete": "pm2 delete ecosystem.config.cjs",
+    "logs": "pm2 logs money-bot",
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
