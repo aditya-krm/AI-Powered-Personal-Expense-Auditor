@@ -76,23 +76,28 @@ export class TransactionAIService {
     const types = Object.values(TransactionType).join(", ");
 
     const prompt = `
-    Analyze the following financial transaction text and extract the details into a JSON object.
+    You are a strict financial parser. Analyze the text and output ONLY valid JSON matching this schema. 
+    Do NOT use markdown code blocks. Do not add conversational text.
     
     Text: "${rawText}"
 
+    Schema:
+    {
+      "type": "EXPENSE" | "INCOME" | "LENT" | "BORROWED" | "REPAYMENT",
+      "amount": number,
+      "currency": "INR",
+      "category": "Enum [${categories}]",
+      "description": "string",
+      "relatedEntity": "string (capitalized name) or null",
+      "paymentMethod": "string or null",
+      "userReply": "Short witty confirmation string"
+    }
+
     Constraints:
     1. 'type' must be one of: [${types}].
-    2. 'category' must be one of: [${categories}]. If unsure, use 'GENERAL'.
-    3. 'amount' must be a number.
-    4. 'currency' should be the 3-letter code (default 'INR' if not specified).
-    5. 'description' should be a brief summary.
-    6. 'relatedEntity' is who paid/received (e.g., 'Uber', 'John').
-    7. 'paymentMethod' (e.g., 'UPI', 'Cash', 'Credit Card').
-    8. 'userReply': Generate a short, friendly, and witty confirmation message for the user strictly summarizing what was saved (e.g., "Got it! 🍔 Spent 500 INR on Food."). 
-    
-    Output STRICTLY JSON. No markdown code blocks.
-    Example:
-    {"type": "EXPENSE", "amount": 500, "currency": "INR", "category": "FOOD_DINING", "description": "Lunch at McD", "relatedEntity": "McDonalds", "paymentMethod": "UPI", "userReply": "Yum! 🍔 Recorded 500 INR for lunch."}
+    2. 'category' defaults to 'GENERAL' if unsure.
+    3. 'amount' is a number.
+    4. 'relatedEntity' is mandatory for LENT/BORROWED/REPAYMENT.
     `;
 
     const rawResponse = await this.llmProvider.generateCompletion(prompt);
