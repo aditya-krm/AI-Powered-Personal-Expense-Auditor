@@ -20,6 +20,16 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Authentication
+
+This web dashboard includes basic token-based authentication to protect sensitive financial data:
+
+- Set the `WEB_ACCESS_TOKEN` environment variable to enable authentication
+- If not set, the app runs in development mode (no authentication required)
+- For production deployments, always set this token to a secure random value
+
+**Note:** This is a single-user application. For multi-user support with proper user management, consider implementing NextAuth.js and adding a User model to the database schema.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

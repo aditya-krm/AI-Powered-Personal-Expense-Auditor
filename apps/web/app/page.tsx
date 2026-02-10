@@ -4,17 +4,25 @@ import { deleteTransaction } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const transactions = await prisma.transaction.findMany({
-    orderBy: { transactionDate: "desc" },
-  });
+  // Fetch recent transactions and aggregates in parallel for performance
+  const [transactions, incomeAggregate, expenseAggregate] = await Promise.all([
+    prisma.transaction.findMany({
+      orderBy: { transactionDate: "desc" },
+      take: 100, // Limit to most recent 100 transactions
+    }),
+    prisma.transaction.aggregate({
+      where: { type: "INCOME" },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.aggregate({
+      where: { type: "EXPENSE" },
+      _sum: { amount: true },
+    }),
+  ]);
 
-  // Calculate summary
-  const income = transactions
-    .filter((t) => t.type === "INCOME")
-    .reduce((acc, t) => acc + Number(t.amount), 0);
-  const expense = transactions
-    .filter((t) => t.type === "EXPENSE")
-    .reduce((acc, t) => acc + Number(t.amount), 0);
+  // Calculate summary using database aggregates
+  const income = Number(incomeAggregate._sum.amount ?? 0);
+  const expense = Number(expenseAggregate._sum.amount ?? 0);
   const balance = income - expense;
 
   return (
