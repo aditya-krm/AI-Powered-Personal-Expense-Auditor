@@ -19,22 +19,19 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // Redirect to login page or return 401
-  return NextResponse.json(
-    { error: "Unauthorized access" },
-    { status: 401 }
-  );
+  // Return 401 for unauthorized access
+  // In a real app, redirect to a login page here
+  return new NextResponse("Unauthorized", { status: 401 });
 }
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/auth (authentication endpoints)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

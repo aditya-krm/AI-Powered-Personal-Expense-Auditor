@@ -3,12 +3,15 @@ import { deleteTransaction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+// Configuration
+const TRANSACTIONS_PER_PAGE = 100;
+
 export default async function Home() {
   // Fetch recent transactions and aggregates in parallel for performance
   const [transactions, incomeAggregate, expenseAggregate] = await Promise.all([
     prisma.transaction.findMany({
       orderBy: { transactionDate: "desc" },
-      take: 100, // Limit to most recent 100 transactions
+      take: TRANSACTIONS_PER_PAGE,
     }),
     prisma.transaction.aggregate({
       where: { type: "INCOME" },

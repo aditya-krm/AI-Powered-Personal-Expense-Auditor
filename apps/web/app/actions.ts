@@ -5,14 +5,16 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
 export async function deleteTransaction(id: number) {
-  // Basic authorization check - ensure user is authenticated
-  // In production with multi-user support, also verify the transaction belongs to the user
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get("auth_token")?.value;
+  // Authorization check - consistent with middleware protection
   const expectedToken = process.env.WEB_ACCESS_TOKEN;
   
-  if (expectedToken && authToken !== expectedToken) {
-    throw new Error("Unauthorized: Invalid or missing authentication");
+  if (expectedToken) {
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get("auth_token")?.value;
+    
+    if (authToken !== expectedToken) {
+      throw new Error("Unauthorized: Invalid or missing authentication");
+    }
   }
   
   await prisma.transaction.delete({ where: { id } });
