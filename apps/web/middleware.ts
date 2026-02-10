@@ -1,26 +1,22 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isValidAuthToken } from "./lib/auth";
 
 export function middleware(request: NextRequest) {
   // Basic token-based authentication for single-user setup
   // Set WEB_ACCESS_TOKEN environment variable to enable protection
-  const accessToken = process.env.WEB_ACCESS_TOKEN;
-  
-  // If no token is configured, allow access (development mode)
-  if (!accessToken) {
-    return NextResponse.next();
-  }
   
   // Check for auth cookie or header
   const authCookie = request.cookies.get("auth_token")?.value;
   const authHeader = request.headers.get("authorization")?.replace("Bearer ", "");
   
-  if (authCookie === accessToken || authHeader === accessToken) {
+  const token = authCookie || authHeader;
+  
+  if (isValidAuthToken(token)) {
     return NextResponse.next();
   }
   
   // Return 401 for unauthorized access
-  // In a real app, redirect to a login page here
   return new NextResponse("Unauthorized", { status: 401 });
 }
 

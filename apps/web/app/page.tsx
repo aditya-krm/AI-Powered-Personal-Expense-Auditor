@@ -24,6 +24,8 @@ export default async function Home() {
   ]);
 
   // Calculate summary using database aggregates
+  // Note: Converting Decimal to Number for display. For high-precision financial
+  // calculations, consider using a decimal library like decimal.js
   const income = Number(incomeAggregate._sum.amount ?? 0);
   const expense = Number(expenseAggregate._sum.amount ?? 0);
   const balance = income - expense;
