@@ -5,8 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "db:generate": "npx prisma generate",
-    "postinstall": "npx prisma generate"
+    "db:generate": "bunx prisma generate",
+    "postinstall": "bunx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "6.0.0"
