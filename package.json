@@ -3,10 +3,18 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsup",
+    "pm2:start": "npm run build && pm2 start pm2.config.cjs --env production",
+    "pm2:restart": "npm run build && pm2 restart moneytrack-bot"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^25.2.1",
-    "prisma": "6.0.0"
+    "prisma": "6.0.0",
+    "tsup": "^8.5.1"
   },
   "peerDependencies": {
     "typescript": "^5"
