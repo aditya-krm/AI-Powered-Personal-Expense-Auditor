@@ -5,8 +5,7 @@ const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1),
   MY_TELEGRAM_ID: z.string().transform((val) => parseInt(val, 10)),
   OPENAI_API_KEY: z.string(),
-  AUTH_USER: z.string(),
-  AUTH_PASS: z.string(),
+  ADMIN_KEY: z.string(),
 });
 
 const processEnv = {
@@ -14,8 +13,7 @@ const processEnv = {
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   MY_TELEGRAM_ID: process.env.MY_TELEGRAM_ID,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  AUTH_USER: process.env.AUTH_USER,
-  AUTH_PASS: process.env.AUTH_PASS,
+  ADMIN_KEY: process.env.ADMIN_KEY,
 };
 
 // Validate and export

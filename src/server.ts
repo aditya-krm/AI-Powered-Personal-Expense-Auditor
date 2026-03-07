@@ -4,16 +4,12 @@ import { logger } from "./utils/logger";
 
 function authenticateRequest(req: Request): boolean {
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Basic ")) return false;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
 
-  const expectedUser = config.AUTH_USER;
-  const expectedPass = config.AUTH_PASS;
+  const expectedKey = config.ADMIN_KEY;
+  const providedKey = authHeader.slice(7); // Remove "Bearer " prefix
 
-  const base64Credentials = authHeader.slice(6);
-  const decoded = atob(base64Credentials);
-  const [user, pass] = decoded.split(":");
-
-  return user === expectedUser && pass === expectedPass;
+  return providedKey === expectedKey;
 }
 
 export function startApiServer() {
