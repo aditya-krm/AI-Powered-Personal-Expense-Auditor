@@ -27,7 +27,7 @@ export function SchemaVisualizer() {
           </p>
         </div>
 
-        <div className="relative w-full md:aspect-[21/9] aspect-video border border-white/5 bg-obsidian/40 backdrop-blur-md flex items-center justify-center">
+        <div className="relative w-full md:aspect-21/9 aspect-video border border-white/5 bg-obsidian/40 backdrop-blur-md flex items-center justify-center">
 
           {/* Schema Background Grid */}
           <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-size-[24px_24px]"></div>

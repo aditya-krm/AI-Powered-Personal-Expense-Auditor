@@ -59,7 +59,7 @@ export function CallToAction() {
 
           <button
             onClick={handleCopy}
-            className="flex-shrink-0 noir-border bg-white/5 hover:bg-white/10 text-silver hover:text-emerald px-4 py-2 font-mono text-xs uppercase tracking-widest flex items-center gap-2 transition-colors group"
+            className="shrink-0 noir-border bg-white/5 hover:bg-white/10 text-silver hover:text-emerald px-4 py-2 font-mono text-xs uppercase tracking-widest flex items-center gap-2 transition-colors group"
           >
             {copied ? <Check className="w-4 h-4 text-emerald" /> : <Copy className="w-4 h-4 group-hover:scale-110 transition-transform" />}
             {copied ? "Copied" : "Copy"}
