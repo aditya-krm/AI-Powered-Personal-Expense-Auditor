@@ -1,4 +1,5 @@
 import { ApiController } from "./controllers/api.controller";
+import { OAuthController } from "./controllers/oauth.controller";
 import { config } from "./config/env";
 import { logger } from "./utils/logger";
 
@@ -14,6 +15,7 @@ function authenticateRequest(req: Request): boolean {
 
 export function startApiServer() {
   const apiController = new ApiController();
+  const oauthController = new OAuthController();
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   const server = Bun.serve({
@@ -38,7 +40,54 @@ export function startApiServer() {
         "Access-Control-Allow-Origin": "*",
       };
 
-      // Authenticate
+      // ─── Public OAuth Routes (no Bearer required) ─────────────────────────
+      // Route 1: Initiate Google OAuth — browser follows this directly
+      if (req.method === "GET" && url.pathname === "/auth/google") {
+        const authUrl = oauthController.getAuthUrl();
+        return Response.redirect(authUrl, 302);
+      }
+
+      // Route 2: Google OAuth callback — Google redirects the browser here
+      if (req.method === "GET" && url.pathname === "/auth/google/callback") {
+        const code = url.searchParams.get("code");
+        const error = url.searchParams.get("error");
+
+        if (error) {
+          return new Response(`
+            <html><body style="font-family:monospace;background:#050505;color:#ef4444;padding:40px">
+              <h1>Authorization Denied</h1>
+              <p>${error}</p>
+              <p>You can close this tab.</p>
+            </body></html>
+          `, { status: 400, headers: { "Content-Type": "text/html" } });
+        }
+
+        if (!code) {
+          return new Response("Missing authorization code", { status: 400 });
+        }
+
+        try {
+          await oauthController.exchangeCodeForTokens(code);
+          return new Response(`
+            <html><body style="font-family:monospace;background:#050505;color:#10B981;padding:40px;text-align:center">
+              <h1 style="font-size:2rem;margin-bottom:1rem">✅ Gmail Connected</h1>
+              <p style="color:#94A3B8">Access granted. Tokens stored securely.</p>
+              <p style="color:#94A3B8;font-size:0.8rem;margin-top:2rem">You can close this tab and return to the dashboard.</p>
+              <script>setTimeout(() => window.close(), 3000)</script>
+            </body></html>
+          `, { headers: { "Content-Type": "text/html" } });
+        } catch (err: any) {
+          logger.error("OAuth callback error", err);
+          return new Response(`
+            <html><body style="font-family:monospace;background:#050505;color:#ef4444;padding:40px">
+              <h1>Connection Failed</h1>
+              <p>${err.message}</p>
+            </body></html>
+          `, { status: 500, headers: { "Content-Type": "text/html" } });
+        }
+      }
+
+      // ─── Authenticate all other requests ─────────────────────────────────
       if (!authenticateRequest(req)) {
         return new Response(
           JSON.stringify({ success: false, error: "Unauthorized" }),
@@ -65,6 +114,11 @@ export function startApiServer() {
             const data = await apiController.getRecentTransactions(limit);
             return new Response(JSON.stringify({ success: true, data }), { headers });
           }
+          // Route 3: Protected status check (authenticated)
+          if (url.pathname === "/auth/google/status") {
+            const connected = await oauthController.isConnected();
+            return new Response(JSON.stringify({ success: true, data: { connected } }), { headers });
+          }
         }
 
         // 404 Not Found Handling
@@ -80,3 +134,6 @@ export function startApiServer() {
   logger.info(`🌐 API Server listening on http://localhost:${server.port}`);
   return server;
 }
+
+
+

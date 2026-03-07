@@ -1,11 +1,10 @@
 // Base URL for the backend API
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 /**
  * Helper function to fetch data from the API with Bearer token authentication.
  */
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  // Check for the admin key in localStorage
   const adminKey = typeof window !== "undefined" ? localStorage.getItem("ADMIN_KEY") : null;
 
   if (!adminKey) {
@@ -38,6 +37,8 @@ export const api = {
   getSummary: () => fetchWithAuth("/api/summary"),
   getLoans: () => fetchWithAuth("/api/loans"),
   getTransactions: (limit: number = 20) => fetchWithAuth(`/api/transactions?limit=${limit}`),
+  getGmailStatus: () => fetchWithAuth("/auth/google/status").then((d) => d.connected as boolean),
+  getGmailAuthUrl: () => `${API_BASE}/auth/google`,
 
   // Method to test a key without fully loading the dashboard
   verifyKey: async (key: string) => {

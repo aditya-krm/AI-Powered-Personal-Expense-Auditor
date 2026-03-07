@@ -6,6 +6,9 @@ const envSchema = z.object({
   MY_TELEGRAM_ID: z.string().transform((val) => parseInt(val, 10)),
   OPENAI_API_KEY: z.string(),
   ADMIN_KEY: z.string(),
+  GOOGLE_CLIENT_ID: z.string().optional().default(""),
+  GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
+  GOOGLE_REDIRECT_URI: z.string().optional().default("http://localhost:3001/auth/google/callback"),
 });
 
 const processEnv = {
@@ -14,6 +17,9 @@ const processEnv = {
   MY_TELEGRAM_ID: process.env.MY_TELEGRAM_ID,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   ADMIN_KEY: process.env.ADMIN_KEY,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
 };
 
 // Validate and export
