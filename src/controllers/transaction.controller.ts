@@ -10,7 +10,7 @@ export class BotController {
   constructor(
     private aiService: TransactionAIService,
     private transactionService: TransactionService,
-  ) {}
+  ) { }
 
   public handleMessage = async (ctx: Context) => {
     // 1. Auth Check
@@ -76,25 +76,49 @@ export class BotController {
         text,
       );
 
+      // Duplicate Event Protection
+      if ('isDuplicate' in savedTx && savedTx.isDuplicate) {
+        logger.warn(`Duplicate telegram message ignored: ${message.message_id}`);
+        return;
+      }
+
+      // We know it's a real transaction now, not the duplicate fallback object
+      const tx = savedTx as any;
+
       // 4. Formatted Reply
-      let replyText = `${parsedData.userReply}\n\n(ID: ${savedTx.id})`;
+      let replyText = `${parsedData.userReply}\n\n(ID: ${tx.id})`;
 
       if (
-        savedTx.remainingBalance !== null &&
-        savedTx.remainingBalance !== undefined
+        tx.remainingBalance !== null &&
+        tx.remainingBalance !== undefined
       ) {
-        if (Number(savedTx.remainingBalance) === 0) {
+        if (Number(tx.remainingBalance) === 0) {
           replyText += `\n🎉 **Debt Fully Settled!**`;
         } else {
-          replyText += `\n📉 **Remaining Balance:** ${savedTx.currency} ${savedTx.remainingBalance}`;
+          replyText += `\n📉 **Remaining Balance:** ${tx.currency} ${tx.remainingBalance}`;
         }
       }
 
-      const actions = getTransactionActions(savedTx.id);
+      const actions = getTransactionActions(tx.id);
       await ctx.reply(replyText, actions);
     } catch (error: any) {
       logger.error("Error processing message", error);
-      await ctx.reply(`❌ Error: ${error.message}`);
+
+      // Log the failure to the database so the user doesn't lose the raw text
+      try {
+        await prisma.failedTransaction.create({
+          data: {
+            rawText: text,
+            errorReason: error.message,
+            telegramMessageId: message.message_id?.toString()
+          }
+        });
+        logger.info(`Failed transaction saved to DB for message: ${text}`);
+      } catch (dbError) {
+        logger.error("Failed to save FailedTransaction to DB", dbError);
+      }
+
+      await ctx.reply(`❌ Error: ${error.message}\n\nDon't worry, your message was saved to the failed records.`);
     }
   };
 

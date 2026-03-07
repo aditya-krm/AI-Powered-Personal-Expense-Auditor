@@ -1,5 +1,20 @@
 import { ApiController } from "./controllers/api.controller";
+import { config } from "./config/env";
 import { logger } from "./utils/logger";
+
+function authenticateRequest(req: Request): boolean {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Basic ")) return false;
+
+  const expectedUser = config.AUTH_USER;
+  const expectedPass = config.AUTH_PASS;
+
+  const base64Credentials = authHeader.slice(6);
+  const decoded = atob(base64Credentials);
+  const [user, pass] = decoded.split(":");
+
+  return user === expectedUser && pass === expectedPass;
+}
 
 export function startApiServer() {
   const apiController = new ApiController();
@@ -27,8 +42,19 @@ export function startApiServer() {
         "Access-Control-Allow-Origin": "*",
       };
 
+      // Authenticate
+      if (!authenticateRequest(req)) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Unauthorized" }),
+          { status: 401, headers }
+        );
+      }
+
       try {
         if (req.method === "GET") {
+          if (url.pathname === "/") {
+            return new Response(JSON.stringify({ success: true, message: "Welcome to the Finance Bot API" }), { headers });
+          }
           if (url.pathname === "/api/summary") {
             const data = await apiController.getSummary();
             return new Response(JSON.stringify({ success: true, data }), { headers });
