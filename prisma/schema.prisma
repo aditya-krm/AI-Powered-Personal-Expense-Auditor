@@ -61,3 +61,13 @@ model Transaction {
   @@index([type, transactionDate])
   @@index([category])
 }
+
+model FailedTransaction {
+  id                Int       @id @default(autoincrement())
+  rawText           String    @map("raw_text") @db.Text
+  errorReason       String?   @map("error_reason") @db.Text
+  telegramMessageId String?   @map("telegram_message_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  @@map("failed_transactions")
+}

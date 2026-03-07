@@ -67,23 +67,31 @@ export class TransactionService {
     }
 
     // 3. Save the new Transaction
-    const newTx = await prisma.transaction.create({
-      data: {
-        type: data.type,
-        amount: amount,
-        currency: data.currency,
-        category: data.category,
-        description: data.description,
-        relatedEntity: data.relatedEntity,
-        paymentMethod: data.paymentMethod,
-        telegramMessageId: telegramMessageId,
-        rawText: rawText,
-        parentId: parentId,
-        isSettled: data.type === "EXPENSE" || data.type === "INCOME",
-      },
-    });
+    try {
+      const newTx = await prisma.transaction.create({
+        data: {
+          type: data.type,
+          amount: amount,
+          currency: data.currency,
+          category: data.category,
+          description: data.description,
+          relatedEntity: data.relatedEntity,
+          paymentMethod: data.paymentMethod,
+          telegramMessageId: telegramMessageId,
+          rawText: rawText,
+          parentId: parentId,
+          isSettled: data.type === "EXPENSE" || data.type === "INCOME",
+        },
+      });
 
-    return { ...newTx, remainingBalance };
+      return { ...newTx, remainingBalance };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        // Unique constraint violation (duplicate telegramMessageId)
+        return { isDuplicate: true };
+      }
+      throw error;
+    }
   }
 
   async updateTransaction(id: number, data: ParsedTransaction, rawText: string) {

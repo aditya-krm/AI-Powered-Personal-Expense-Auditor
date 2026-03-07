@@ -5,6 +5,7 @@ import { TransactionService } from "./services/transaction.service";
 import { BotController } from "./controllers/transaction.controller";
 import { ReportController } from "./controllers/report.controller";
 import { logger } from "./utils/logger";
+import { startApiServer } from "./server";
 
 async function main() {
   logger.info("🚀 Starting Finance-Bot-Bun...");
@@ -37,14 +38,31 @@ async function main() {
   bot.on("text", botController.handleMessage);
   bot.on("callback_query", botController.handleCallback);
 
-  // 4. Start
+  // 4. Register Bot Commands for the auto-complete UI
+  await bot.telegram.setMyCommands([
+    { command: "start", description: "Start the bot" },
+    { command: "summary", description: "Get today's summary" },
+    { command: "loans", description: "Check outstanding loans/debts" }
+  ]);
+  logger.info("✅ Telegram bot commands registered");
+
+  // 5. Start the REST API
+  const apiServer = startApiServer();
+
+  // 6. Start the Telegram Bot
   bot.launch(() => {
     logger.info("🤖 Bot is online!");
   });
 
   // Enable graceful stop
-  process.once("SIGINT", () => bot.stop("SIGINT"));
-  process.once("SIGTERM", () => bot.stop("SIGTERM"));
+  process.once("SIGINT", () => {
+    bot.stop("SIGINT");
+    apiServer.stop(true);
+  });
+  process.once("SIGTERM", () => {
+    bot.stop("SIGTERM");
+    apiServer.stop(true);
+  });
 }
 
 main().catch((err) => {
