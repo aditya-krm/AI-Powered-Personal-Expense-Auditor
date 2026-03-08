@@ -9,6 +9,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional().default(""),
   GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
   GOOGLE_REDIRECT_URI: z.string().optional().default("http://localhost:3001/auth/google/callback"),
+  GMAIL_TOPIC_NAME: z.string().optional().default(""),
 });
 
 const processEnv = {
@@ -20,6 +21,7 @@ const processEnv = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  GMAIL_TOPIC_NAME: process.env.GMAIL_TOPIC_NAME,
 };
 
 // Validate and export

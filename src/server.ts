@@ -1,5 +1,6 @@
 import { ApiController } from "./controllers/api.controller";
 import { OAuthController } from "./controllers/oauth.controller";
+import { GmailService } from "./services/gmail.service";
 import { config } from "./config/env";
 import { logger } from "./utils/logger";
 
@@ -16,6 +17,7 @@ function authenticateRequest(req: Request): boolean {
 export function startApiServer() {
   const apiController = new ApiController();
   const oauthController = new OAuthController();
+  const gmailService = new GmailService();
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   const server = Bun.serve({
@@ -40,8 +42,40 @@ export function startApiServer() {
         "Access-Control-Allow-Origin": "*",
       };
 
-      // ─── Public OAuth Routes (no Bearer required) ─────────────────────────
-      // Route 1: Initiate Google OAuth — browser follows this directly
+      // ─── Public Routes (no Bearer required) ──────────────────────────────
+
+      // Pub/Sub push webhook — must return 200 immediately
+      if (req.method === "POST" && url.pathname === "/api/webhook/gmail") {
+        try {
+          const body = await req.json() as any;
+
+          if (!body.message?.data) return new Response("Bad Request", { status: 400 });
+
+          const decoded = Buffer.from(body.message.data, "base64").toString("utf-8");
+          const raw = JSON.parse(decoded) as { emailAddress: string; historyId: string | number };
+          const notification = {
+            emailAddress: raw.emailAddress,
+            historyId: String(raw.historyId),
+          };
+
+          // Acknowledge immediately, process in background
+          const processEmail = async () => {
+            const messages = await gmailService.fetchNewMessages(notification.historyId);
+            for (const msg of messages) {
+              logger.info(`📧 New mail from ${msg.from} — "${msg.subject}"`);
+              // TODO: pass msg to downstream handler (AI parser, Telegram notifier, etc.)
+            }
+          };
+
+          processEmail().catch((err) => logger.error("Gmail processing error", err));
+          return new Response("OK", { status: 200 });
+        } catch (error) {
+          logger.error("Webhook error", error);
+          return new Response("Server Error", { status: 500 });
+        }
+      }
+
+      // Initiate Google OAuth — browser follows this directly
       if (req.method === "GET" && url.pathname === "/auth/google") {
         const authUrl = oauthController.getAuthUrl();
         return Response.redirect(authUrl, 302);
@@ -132,6 +166,17 @@ export function startApiServer() {
   });
 
   logger.info(`🌐 API Server listening on http://localhost:${server.port}`);
+
+  // Start Gmail push watch — registers this server with Pub/Sub
+  // Watch expires every 7 days; re-call to renew or schedule a daily cron
+  if (config.GMAIL_TOPIC_NAME) {
+    gmailService.startWatch()
+      .then(({ historyId, expiration }) =>
+        logger.info(`👁️  Gmail watch registered (historyId: ${historyId}, expires: ${new Date(Number(expiration)).toLocaleDateString()})`)
+      )
+      .catch((err) => logger.warn(`⚠️  Gmail watch skipped: ${err.message}`));
+  }
+
   return server;
 }
 

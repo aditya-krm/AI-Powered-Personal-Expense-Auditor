@@ -104,4 +104,19 @@ export class OAuthController {
     const tokens = await this.getTokens();
     return tokens !== null && !!tokens.access_token;
   }
+
+  async getLastHistoryId(): Promise<string | null> {
+    const row = await prisma.oAuthToken.findUnique({
+      where: { provider: PROVIDER },
+      select: { lastHistoryId: true },
+    });
+    return row?.lastHistoryId ?? null;
+  }
+
+  async setLastHistoryId(historyId: string): Promise<void> {
+    await prisma.oAuthToken.update({
+      where: { provider: PROVIDER },
+      data: { lastHistoryId: historyId },
+    });
+  }
 }

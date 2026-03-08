@@ -73,14 +73,15 @@ model FailedTransaction {
 }
 
 model OAuthToken {
-  id           Int      @id @default(autoincrement())
-  provider     String   @unique @db.VarChar(50) // e.g. "google"
-  accessToken  String   @map("access_token") @db.Text
-  refreshToken String?  @map("refresh_token") @db.Text
-  expiryDate   BigInt   @map("expiry_date")   // Unix ms timestamp
-  tokenType    String   @map("token_type") @db.VarChar(50)
-  scope        String   @db.Text
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  id             Int      @id @default(autoincrement())
+  provider       String   @unique @db.VarChar(50)
+  accessToken    String   @map("access_token") @db.Text
+  refreshToken   String?  @map("refresh_token") @db.Text
+  expiryDate     BigInt   @map("expiry_date")
+  tokenType      String   @map("token_type") @db.VarChar(50)
+  scope          String   @db.Text
+  lastHistoryId  String?  @map("last_history_id") @db.VarChar(50) // tracks Gmail history window
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("oauth_tokens")
 }
