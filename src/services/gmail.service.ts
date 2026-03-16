@@ -2,8 +2,6 @@ import { logger } from "../utils/logger";
 import { config } from "../config/env";
 import { OAuthController, type GoogleTokens } from "../controllers/oauth.controller";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 export interface GmailMessage {
   id: string;
   threadId: string;

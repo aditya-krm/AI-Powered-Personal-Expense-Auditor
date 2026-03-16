@@ -36,30 +36,43 @@ enum Category {
   GENERAL
 }
 
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+}
+
 model Transaction {
-  id                Int             @id @default(autoincrement())
+  id                Int               @id @default(autoincrement())
   type              TransactionType
-  amount            Decimal         @db.Decimal(10, 2)
-  currency          String          @default("INR") @db.VarChar(3)
-  category          Category        @default(GENERAL)
-  description       String?         @db.Text
-  relatedEntity     String?         @map("related_entity") @db.VarChar(100)
+  amount            Decimal           @db.Decimal(10, 2)
+  currency          String            @default("INR") @db.VarChar(3)
+  category          Category          @default(GENERAL)
+  description       String?           @db.Text
+  relatedEntity     String?           @map("related_entity") @db.VarChar(100)
   
   // Logic for Partial Payments/History
-  parentId          Int?            @map("parent_id")
-  parent            Transaction?    @relation("TransactionHistory", fields: [parentId], references: [id])
-  children          Transaction[]   @relation("TransactionHistory")
+  parentId          Int?              @map("parent_id")
+  parent            Transaction?      @relation("TransactionHistory", fields: [parentId], references: [id])
+  children          Transaction[]     @relation("TransactionHistory")
   
-  isSettled         Boolean         @default(false) @map("is_settled")
-  telegramMessageId String?         @unique @map("telegram_message_id")
-  rawText           String?         @map("raw_text") // Original message
-  paymentMethod     String?         @map("payment_method") @db.VarChar(50)
-  transactionDate   DateTime        @default(now()) @map("transaction_date")
-  createdAt         DateTime        @default(now()) @map("created_at")
+  isSettled         Boolean           @default(false) @map("is_settled")
+
+  // Source tracking — Telegram entries use telegramMessageId, email entries use sourceId
+  telegramMessageId String?           @unique @map("telegram_message_id")
+  sourceId          String?           @unique @map("source_id")  // Gmail message ID (dedup)
+
+  // Draft Protocol — email auto-detections start as PENDING, manual entries are CONFIRMED
+  status            TransactionStatus @default(CONFIRMED) @map("status")
+
+  rawText           String?           @map("raw_text")
+  paymentMethod     String?           @map("payment_method") @db.VarChar(50)
+  transactionDate   DateTime          @default(now()) @map("transaction_date")
+  createdAt         DateTime          @default(now()) @map("created_at")
 
   @@map("transactions")
   @@index([type, transactionDate])
   @@index([category])
+  @@index([status])
 }
 
 model FailedTransaction {

@@ -112,8 +112,9 @@ export class TransactionService {
         description: data.description,
         relatedEntity: data.relatedEntity,
         paymentMethod: data.paymentMethod,
-        rawText: rawText, // Update raw text to reflect the correction
+        rawText: rawText,
         isSettled: data.type === "EXPENSE" || data.type === "INCOME",
+        status: "CONFIRMED", // Editing a draft auto-confirms it
       }
     });
 

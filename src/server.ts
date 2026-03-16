@@ -1,6 +1,7 @@
 import { ApiController } from "./controllers/api.controller";
 import { OAuthController } from "./controllers/oauth.controller";
 import { GmailService } from "./services/gmail.service";
+import { EmailProcessorService } from "./services/email-processor.service";
 import { config } from "./config/env";
 import { logger } from "./utils/logger";
 
@@ -14,7 +15,7 @@ function authenticateRequest(req: Request): boolean {
   return providedKey === expectedKey;
 }
 
-export function startApiServer() {
+export function startApiServer(emailProcessor: EmailProcessorService) {
   const apiController = new ApiController();
   const oauthController = new OAuthController();
   const gmailService = new GmailService();
@@ -62,8 +63,10 @@ export function startApiServer() {
           const processEmail = async () => {
             const messages = await gmailService.fetchNewMessages(notification.historyId);
             for (const msg of messages) {
-              logger.info(`📧 New mail from ${msg.from} — "${msg.subject}"`);
-              // TODO: pass msg to downstream handler (AI parser, Telegram notifier, etc.)
+              // Fire-and-forget: filter, parse, save, notify
+              emailProcessor.processEmail(msg).catch((err) =>
+                logger.error(`Email processing error for ${msg.id}:`, err)
+              );
             }
           };
 

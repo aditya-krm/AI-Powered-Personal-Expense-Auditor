@@ -23,8 +23,8 @@ export class OAuthController {
       redirect_uri: config.GOOGLE_REDIRECT_URI,
       response_type: "code",
       scope: this.SCOPES.join(" "),
-      access_type: "offline",   // gets refresh_token
-      prompt: "consent",        // force consent screen to always get refresh_token
+      access_type: "offline",
+      prompt: "consent",
     });
 
     return `${this.AUTH_URL}?${params.toString()}`;
