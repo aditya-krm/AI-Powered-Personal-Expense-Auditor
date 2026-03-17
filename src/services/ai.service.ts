@@ -3,8 +3,6 @@ import { logger } from "../utils/logger";
 import { z } from "zod";
 import { TransactionType, Category } from "@prisma/client/wasm";
 
-// --- Interfaces ---
-
 export interface LLMProvider {
   generateCompletion(prompt: string): Promise<string>;
 }
@@ -20,7 +18,6 @@ export interface ParsedTransaction {
   userReply: string;
 }
 
-// --- Zod Schema for Validation ---
 const TransactionSchema = z.object({
   type: z.nativeEnum(TransactionType),
   amount: z.number(),
@@ -31,8 +28,6 @@ const TransactionSchema = z.object({
   paymentMethod: z.string().optional().nullable(),
   userReply: z.string(),
 });
-
-// --- OpenAI Implementation ---
 
 export class OpenAIProvider implements LLMProvider {
   private client: OpenAI;
@@ -102,7 +97,6 @@ export class TransactionAIService {
 
     const rawResponse = await this.llmProvider.generateCompletion(prompt);
 
-    // Clean up markdown if present
     const cleanedJson = rawResponse
       .replace(/```json/g, "")
       .replace(/```/g, "")
@@ -110,7 +104,6 @@ export class TransactionAIService {
 
     try {
       const parsed = JSON.parse(cleanedJson);
-      // Validate with Zod
       const validated = TransactionSchema.parse(parsed);
       return validated as ParsedTransaction;
     } catch (e) {

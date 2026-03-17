@@ -82,7 +82,6 @@ export class ReportController {
     if (!ctx.from || ctx.from.id !== config.MY_TELEGRAM_ID) return;
 
     try {
-      // Fetch all transactions involving a related entity
       const txs = await prisma.transaction.findMany({
         where: { relatedEntity: { not: null } },
       });
@@ -91,7 +90,6 @@ export class ReportController {
 
       for (const t of txs) {
         let name = t.relatedEntity!;
-        // Normalize name to Title Case to group "bob", "Bob", "BOB" together
         name = name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
 
         balances[name] ??= { lent: 0, borrowed: 0, repaid: 0 };
@@ -109,16 +107,13 @@ export class ReportController {
       for (const [name, bal] of Object.entries(balances)) {
         const netLent = bal.lent - bal.borrowed;
 
-        // Logic: Repayments reduce the absolute magnitude of the net position
         if (netLent > 0) {
-          // I lent more -> They owe me
           const outstanding = netLent - bal.repaid;
           if (outstanding > 1) {
             oweMeText += `• **${name}**: ₹${outstanding.toFixed(2)}\n`;
             hasData = true;
           }
         } else if (netLent < 0) {
-          // I borrowed more -> I owe them
           const outstanding = Math.abs(netLent) - bal.repaid;
           if (outstanding > 1) {
             iOweText += `• **${name}**: ₹${outstanding.toFixed(2)}\n`;
